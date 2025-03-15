@@ -141,7 +141,13 @@ class Blockchain {
       const currentBlock = this.chain[i];
       const previousBlock = this.chain[i - 1];
 
-      //Check if block's transactions are valid
+      // Check if Merkle root is valid
+      if (!currentBlock.verifyMerkleRoot()) {
+        console.error('Invalid Merkle root in block');
+        return false;
+      }
+
+      // Check if block's transactions are valid
       if (!currentBlock.hasValidTransactions()) {
         console.error('Block in Chain contains invalid transactions');
         return false;
@@ -155,9 +161,7 @@ class Blockchain {
 
       // Check if block's previousHash points to the has of the previous block
       if (currentBlock.previousHash !== previousBlock.hash) {
-        console.error(
-          'Block hash link broken (A block is not properly pointing to the next)'
-        );
+        console.error('Block hash link broken');
         return false;
       }
     }

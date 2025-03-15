@@ -7,18 +7,15 @@ class Block {
     this.previousHash = previousHash;
     this.difficulty = difficulty;
     this.nonce = 0;
+    this.merkleTree = new MerkleTree(transactions);
+    this.merkleRoot = this.merkleTree.root;
     this.hash = this.calculateHash();
   }
 
   // Calculates current block's hash
   calculateHash() {
     return cryptoJs
-      .SHA256(
-        this.previousHash +
-          this.timestamp +
-          JSON.stringify(this.transactions) +
-          this.nonce
-      )
+      .SHA256(this.previousHash + this.timestamp + this.merkleRoot + this.nonce)
       .toString();
   }
 
@@ -48,6 +45,12 @@ class Block {
       }
     }
     return true;
+  }
+
+  // Verify Merkle root is valid
+  verifyMerkleRoot() {
+    const verifyTree = new MerkleTree(this.transactions);
+    return verifyTree.root === this.merkleRoot;
   }
 }
 

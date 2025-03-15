@@ -161,6 +161,113 @@ async function runBlockchainDemo() {
   console.log(`Person1: ${coin.getBalanceOfAddress(addr1)} coins`);
   console.log(`Person2: ${coin.getBalanceOfAddress(addr2)} coins`);
   console.log(`Person3: ${coin.getBalanceOfAddress(addr3)} coins`);
+
+  // Demonstrate Merkle root functionality
+  logSection('MERKLE ROOT DEMONSTRATION');
+
+  // Show Merkle root from an existing block
+  console.log('Showing Merkle root from Block #2:');
+  const demoBlock = coin.chain[2]; // Use block #2 which has transactions
+  console.log(`Block hash: ${demoBlock.hash.substring(0, 15)}...`);
+  console.log(`Merkle root: ${demoBlock.merkleRoot.substring(0, 15)}...`);
+  console.log(`Transaction count: ${demoBlock.transactions.length}`);
+
+  // Verify Merkle root is valid
+  console.log(`\nVerifying Merkle root integrity...`);
+  console.log(
+    `Merkle root valid: ${demoBlock.verifyMerkleRoot() ? 'YES ✓' : 'NO ✗'}`
+  );
+
+  // Demonstrate what happens when a transaction is tampered with
+  logSection('TRANSACTION TAMPERING DETECTION');
+
+  console.log('Attempting to tamper with a transaction in Block #2...');
+
+  // Save original state for restoration
+  const originalAmount = demoBlock.transactions[0].amount;
+  const originalMerkleRoot = demoBlock.merkleRoot;
+
+  // Tamper with transaction
+  console.log(`\nOriginal transaction amount: ${originalAmount}`);
+  demoBlock.transactions[0].amount += 50;
+  console.log(
+    `Modified transaction amount: ${demoBlock.transactions[0].amount}`
+  );
+
+  // Check if tampering is detected
+  console.log(`\nVerifying Merkle root after tampering:`);
+  console.log(
+    `Merkle root still valid: ${
+      demoBlock.verifyMerkleRoot()
+        ? 'YES (problem!)'
+        : 'NO (tampering detected!) ✓'
+    }`
+  );
+
+  // Show what happens to blockchain validation after tampering
+  console.log(`\nVerifying entire blockchain after transaction tampering:`);
+  const isValidAfterTampering = coin.isChainValid();
+  console.log(
+    `Blockchain still valid: ${
+      isValidAfterTampering ? 'YES (problem!)' : 'NO (tampering detected!) ✓'
+    }`
+  );
+
+  // Restore original values for clean demo
+  demoBlock.transactions[0].amount = originalAmount;
+  demoBlock.merkleRoot = originalMerkleRoot;
+
+  // Create a new block with Merkle root to show efficiency
+  logSection('MERKLE ROOT EFFICIENCY');
+
+  console.log(
+    'Creating multiple transactions to demonstrate Merkle tree efficiency...'
+  );
+
+  // Add several transactions for the demo
+  for (let i = 0; i < 8; i++) {
+    // Alternate senders and receivers
+    const sender = i % 2 === 0 ? addr1 : addr2;
+    const receiver = i % 2 === 0 ? addr3 : addr1;
+    const senderKey = i % 2 === 0 ? key1 : key2;
+
+    try {
+      coin.createTransaction(sender, receiver, 1, senderKey);
+      console.log(
+        `Created transaction #${i + 1}: ${sender.substring(
+          0,
+          10
+        )}... -> ${receiver.substring(0, 10)}...`
+      );
+    } catch (error) {
+      console.error(`Failed to create transaction #${i + 1}: ${error.message}`);
+    }
+  }
+
+  // Mine a block with these transactions
+  console.log('\nMining a block with multiple transactions...');
+  const merkleBlock = coin.minePendingTransactions(addr1);
+
+  // Show the benefit of Merkle trees
+  console.log(`\nBlock has ${merkleBlock.transactions.length} transactions`);
+  console.log(
+    `But validation only needs the Merkle root: ${merkleBlock.merkleRoot.substring(
+      0,
+      15
+    )}...`
+  );
+  console.log(
+    `This provides efficient verification without processing each transaction individually`
+  );
+
+  // Final validation
+  logSection('FINAL VALIDATION');
+
+  const finalValidation = coin.isChainValid();
+  console.log(
+    `Final blockchain state valid: ${finalValidation ? 'YES ✓' : 'NO ✗'}`
+  );
+  console.log(`Total blocks in chain: ${coin.chain.length}`);
 }
 
 // Run everything
